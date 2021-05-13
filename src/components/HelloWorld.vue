@@ -1,58 +1,161 @@
 <template>
   <div class="hello">
-    <h1>{{ msg }}</h1>
-    <p>
-      For a guide and recipes on how to configure / customize this project,<br>
-      check out the
-      <a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a>.
-    </p>
-    <h3>Installed CLI Plugins</h3>
-    <ul>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel" target="_blank" rel="noopener">babel</a></li>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-eslint" target="_blank" rel="noopener">eslint</a></li>
-    </ul>
-    <h3>Essential Links</h3>
-    <ul>
-      <li><a href="https://vuejs.org" target="_blank" rel="noopener">Core Docs</a></li>
-      <li><a href="https://forum.vuejs.org" target="_blank" rel="noopener">Forum</a></li>
-      <li><a href="https://chat.vuejs.org" target="_blank" rel="noopener">Community Chat</a></li>
-      <li><a href="https://twitter.com/vuejs" target="_blank" rel="noopener">Twitter</a></li>
-      <li><a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a></li>
-    </ul>
-    <h3>Ecosystem</h3>
-    <ul>
-      <li><a href="https://router.vuejs.org" target="_blank" rel="noopener">vue-router</a></li>
-      <li><a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a></li>
-      <li><a href="https://github.com/vuejs/vue-devtools#vue-devtools" target="_blank" rel="noopener">vue-devtools</a></li>
-      <li><a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener">vue-loader</a></li>
-      <li><a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">awesome-vue</a></li>
-    </ul>
+    <h3>{{ message }}</h3>
+    <form name="todo-form" method="post" action="" v-on:submit.prevent="addTask"> 
+      <input name="add-todo" type="text" v-model="addTodoInput" :class="{error:hasError}" />
+      <button type="submit">Add</button>
+    </form>
+
+    <div class="todo-lists" v-if="lists.length">
+      <h3>My Todo Tasks</h3>
+      <ul>
+        <li v-for="list in filterLists" :key="list.id">
+          <input type="checkbox" @change="completeTask(list)" v-bind:checked="list.isComplete"/>
+          <span 
+            class="title" 
+            contenteditable="true"
+            @keydown.enter="updateTask($event,list)"
+            @blur="updateTask($event,list)"
+            :class="{completed: list.isComplete}"
+          >
+            {{list.title}}
+          </span>
+          <span class="remove" v-on:click="removeTask(list)">x</span>
+        </li>
+      </ul>
+    </div>
+
   </div>
 </template>
 
 <script>
+import _ from 'lodash';
+
 export default {
-  name: 'HelloWorld',
-  props: {
-    msg: String
+  data() {
+   return{
+     message: 'Welcome to Todo App',
+     addTodoInput: '',
+     lists: [],
+     hasError: false      //에러 핸들링
+   }
+  },
+  computed:{
+    filterLists(){
+      return _.orderBy(this.lists, ['isComplete', false])
+    }
+
+  },
+
+  methods:{
+    addTask(){  
+      // 값이 없으면 hasError 를 true로
+      if(!this.addTodoInput){
+        this.hasError = true;
+        return;
+      }
+
+      this.hasError = false; // 내용이 있으면 hasError를 false로 
+
+      this.lists.push({
+        id: this.lists.length+1,
+        title: this.addTodoInput,
+        isComplete: false
+      });
+
+      this.addTodoInput = ''; // 검색후 초기화
+    },
+
+    updateTask(e,list){
+      e.preventDefault();
+      list.title = e.target.innerText;
+      e.target.blur();
+    },
+
+    completeTask(list){
+      list.isComplete = !list.isComplete
+    },
+
+    removeTask(list){
+      console.log(list)
+
+      var index = _.findIndex(this.lists, list);
+      this.lists.splice(index,1);
+    }
+
+
   }
+
+
 }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-h3 {
-  margin: 40px 0 0;
+:root{font-family: Arial;}
+input[type=text]{
+  font-size:16px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid #c4c4c4;
 }
-ul {
-  list-style-type: none;
-  padding: 0;
+
+button{
+  background: #3498db;
+  background-image: linear-gradient(to bottom, #3498db, #2980b9);
+  border-radius: 28px;
+  
+  color: #ffffff;
+  font-size: 16px;
+  padding: 8px 20px;
+  border: none;
+  cursor:pointer;
 }
-li {
+button:hover {
+  background: #3cb0fd;
+  background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
+}
+input[type=text].error{border: 1px solid red;}
+[contenteditable=true]:focus{
+  
+  
+  overflow: hidden;
+  border: 1px solid transparent;
+
+  -webkit-appearance: textfield;
+  -moz-appearance: textfield;
+  appearance: textfield;
+
+  white-space: nowrap;
+  border-radius: 10px;
+}
+
+.title{
   display: inline-block;
-  margin: 0 10px;
+  width: 200px;
+  border: 1px solid transparent;
+  padding: 8px;
+  font-size: 16px;
+  vertical-align:middle;
 }
-a {
-  color: #42b983;
+
+.title:hover{
+  border:1px solid #c4c4c4;
+  border-radius: 10px;
+}
+
+.remove{
+  cursor:pointer;
+  display:inline-block;
+  border: 1px solid #c4c4c4;
+  border-radius: 50%;
+  padding:0px 4px;
+}
+.remove:hover{
+  background: #3cb0fd;
+}
+
+.completed{
+  text-decoration: line-through;
 }
 </style>
